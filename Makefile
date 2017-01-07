@@ -1,5 +1,12 @@
-CFLAGS=-save-temps -Os -m16 -march=i386 -ffreestanding -Wall -Werror
-LDFLAGS=-save-temps -m16 -march=i386 -nostdlib -Wl,--nmagic,--script=$(LDSCRIPT)
+# Keep intermediates, don't apply old suffix rules
+.PRECIOUS: %.s %.o
+.SUFFIXES:
+
+CC=faucc
+CFLAGS=-b i286 --freestanding
+LDFLAGS=-b i286 -nostdlib -T $(LDSCRIPT)
+#CFLAGS=-save-temps -Os -m16 -march=i386 -ffreestanding -Wall -Werror
+#LDFLAGS=-save-temps -m16 -march=i386 -nostdlib -Wl,--nmagic,--script=$(LDSCRIPT)
 
 all: boot.bin rom.fix
 
@@ -21,10 +28,13 @@ boot.bin: LDSCRIPT=pcboot.ld
 rom.bin: LDSCRIPT=pcrom.ld
 
 %.bin: %.o $(LDSCRIPT)
-	gcc $(LDFLAGS) -o $@ $<
+	$(CC) $(LDFLAGS) -o $@ $<
 
-%.o: %.c
-	gcc $(CFLAGS) -c -o $@ $<
+%.o: %.s
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.s: %.c
+	$(CC) $(CFLAGS) -S -o $@ $<
 
 fix_csum: fix_csum.c
 	gcc -o $@ $<

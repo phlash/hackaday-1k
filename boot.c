@@ -1,7 +1,9 @@
-/* start bootloader with jump to main */
-__asm__(
-	"jmp $0, $main\n"
-);
+/* start bootloader with jump to main, has to be in a function for faucc to place in .text.. */
+static void __attribute__((naked)) _start(void) {
+	__asm__(
+		"jmp $0, $main\n"
+	);
+}
 
 /* BIOS-free character display - raw video RAM access assuming standard CGA/VGA mode 3 */
 static void videoInit(void) {
@@ -29,6 +31,14 @@ static void videoChar(const unsigned short c) {
 		: "a"(c), "c"(_vpos)
 		: "bx"
 	);
+/*	__asm__ volatile (
+		"mov $0xE, %%ah\n"
+		"mov $0, %%bx\n"
+		"int $0x10\n"
+		: // no outputs
+		: "a"(c)
+		: "bx"
+	);*/
 }
 
 /* text printer */
@@ -49,16 +59,16 @@ static void print(const char *s) {
 }
 
 /* hex dump */
-static void hex(unsigned int val) {
-	char hex[10], o='0', s=28;
+static void hex(unsigned short val) {
+	char hex[6], o='0', s=12;
 	int c=0;
 	do {
 		hex[c] = ((val>>s) & 0xF)+o;
 		if (hex[c]>'9') hex[c]+=('A'-'0'-10);
 		s-=4;
-	} while (++c<8);
-	hex[8] = '\n';
-	hex[9] = 0;
+	} while (++c<4);
+	hex[4] = '\n';
+	hex[5] = 0;
 	print(hex);
 }
 
@@ -70,12 +80,12 @@ extern char _bss;
 extern char _end;
 void main() {
 	videoInit();
-	hex(0xDEADBEEF);
-	hex((unsigned int)&_text);
-	hex((unsigned int)&_data);
-	hex((unsigned int)&_rodata);
-	hex((unsigned int)&_bss);
-	hex((unsigned int)&_end);
+	hex(0xBEEF);
+	hex((unsigned short)&_text);
+	hex((unsigned short)&_data);
+	hex((unsigned short)&_rodata);
+	hex((unsigned short)&_bss);
+	hex((unsigned short)&_end);
 	print("no BIOS!");
 	while(1);
 }
