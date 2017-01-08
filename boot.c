@@ -21,7 +21,7 @@ static void videoInit(void) {
 	);
 }
 
-static int _vpos = 0;
+static unsigned short _vpos = 0;
 static void videoChar(const unsigned short c) {
 	__asm__ volatile (
 		"mov %%cx, %%bx\n"
@@ -42,6 +42,10 @@ static void videoChar(const unsigned short c) {
 }
 
 /* text printer */
+static unsigned short round(unsigned short v, unsigned short r) {
+	return (v/r)*r;
+}
+
 static void print(const char *s) {
 	do {
 		switch (*s) {
@@ -50,7 +54,7 @@ static void print(const char *s) {
 			++_vpos;
 			break;
 		case '\n':
-			_vpos = (_vpos+80)/80*80;
+			_vpos = round(_vpos+80, 80);
 		case 0:
 			break;
 		}
@@ -61,7 +65,7 @@ static void print(const char *s) {
 /* hex dump */
 static void hex(unsigned short val) {
 	char hex[6], o='0', s=12;
-	int c=0;
+	char c=0;
 	do {
 		hex[c] = ((val>>s) & 0xF)+o;
 		if (hex[c]>'9') hex[c]+=('A'-'0'-10);
@@ -80,12 +84,12 @@ extern char _bss;
 extern char _end;
 void main() {
 	videoInit();
+	print("no BIOS!\n");
 	hex(0xBEEF);
 	hex((unsigned short)&_text);
 	hex((unsigned short)&_data);
 	hex((unsigned short)&_rodata);
 	hex((unsigned short)&_bss);
 	hex((unsigned short)&_end);
-	print("no BIOS!");
 	while(1);
 }
