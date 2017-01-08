@@ -17,7 +17,7 @@ static void __attribute__((naked)) _start(void) {
 /* BIOS-free character display - raw video RAM access assuming standard CGA/VGA mode 3 */
 static unsigned short videoInit(unsigned short v) {
 	unsigned short cs=0;
-	// set ES to video buffer, clear screen
+	// set ES to video buffer, clear screen to specified value
 	__asm__ volatile (
 		"mov $0xB800, %%ax\n"
 		"mov %%ax, %%es\n"
@@ -28,7 +28,7 @@ static unsigned short videoInit(unsigned short v) {
 		"push %%cs\n"
 		"pop %0\n"
 		: "=r"(cs)
-		: "r"(v)
+		: "m"(v)
 		: "ax","cx","di"
 	);
 	return cs;
@@ -88,7 +88,7 @@ extern char _bss;
 extern char _end;
 void main() {
 	unsigned short pos = 0;
-	unsigned short cs = videoInit(0x700 | '!');
+	unsigned short cs = videoInit(0x3521);
 	pos=print(pos, ID);
 	pos=hex(pos, cs);
 	pos=hex(pos, (unsigned short)&_text);
