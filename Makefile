@@ -3,9 +3,11 @@
 .SUFFIXES:
 
 CC=faucc
-CFLAGS=-b i286 --freestanding
+CFLAGS=-b i286 --freestanding -D$(TARGET)
 LDFLAGS=-b i286 -nostdlib -T $(LDSCRIPT)
-#CFLAGS=-save-temps -Os -m16 -march=i386 -ffreestanding -Wall -Werror
+# gcc switches..
+#CC=gcc
+#CFLAGS=-save-temps -Os -m16 -march=i386 -ffreestanding -Wall -Werror -D$(TARGET)
 #LDFLAGS=-save-temps -m16 -march=i386 -nostdlib -Wl,--nmagic,--script=$(LDSCRIPT)
 
 all: boot.bin rom.fix
@@ -21,11 +23,19 @@ testrom: all
 
 rom.fix: rom.bin fix_csum
 	cp rom.bin $@
-	./fix_csum $@
+	./fix_csum $@ write
 
 boot.bin: LDSCRIPT=pcboot.ld
+boot.bin: TARGET=TARGET_BOOT
 
 rom.bin: LDSCRIPT=pcrom.ld
+rom.bin: TARGET=TARGET_ROM
+
+boot.s: hack.c
+	$(CC) $(CFLAGS) -S -o $@ $<
+
+rom.s: hack.c
+	$(CC) $(CFLAGS) -S -o $@ $<
 
 %.bin: %.o $(LDSCRIPT)
 	$(CC) $(LDFLAGS) -o $@ $<
@@ -33,8 +43,6 @@ rom.bin: LDSCRIPT=pcrom.ld
 %.o: %.s
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-%.s: %.c
-	$(CC) $(CFLAGS) -S -o $@ $<
-
 fix_csum: fix_csum.c
 	gcc -o $@ $<
+

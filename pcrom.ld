@@ -1,13 +1,13 @@
 OUTPUT_FORMAT(binary)
 SECTIONS
 {
-	. = 0x7C00;
-	.head : AT(0x7C00)
+	. = 0;
+	.head : AT(0)
 	{
 		SHORT(0xAA55);
-		BYTE(2);
+		BYTE(0);
 	}
-	.text : AT(0x7C03)
+	.text : AT(3)
 	{
 		_text = .;
 		*(.text*);
@@ -22,7 +22,7 @@ SECTIONS
 		*(.bss*);
 		_end = .;
 	}
-	.csum : AT(0x7FFF)
+	.csum ALIGN(0x400)-1 :
 	{
 		BYTE(0);
 	}

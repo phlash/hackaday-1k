@@ -17,9 +17,16 @@ int main(int argc, char **argv) {
 		++n;
 	}
 	printf("read %d bytes, residual %d\n", n, s);
-	fseek(fp, -1, SEEK_END);
-	s = 256 - s;
-	fputc(s, fp);
+	if (argc>2) {
+		n /= 512;
+		s = (s+n)%256;
+		s = 256 - s;
+		printf("writing pages %d, csum %d\n", n, s);
+		fseek(fp, 2, SEEK_SET);
+		fputc(n, fp);
+		fseek(fp, -1, SEEK_END);
+		fputc(s, fp);
+	}
 	fclose(fp);
 	return 0;
 }
