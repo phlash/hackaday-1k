@@ -3,22 +3,23 @@
 .SUFFIXES:
 
 CC=faucc
-CFLAGS=-b i286 --freestanding -D$(TARGET)
-LDFLAGS=-b i286 -nostdlib -T $(LDSCRIPT)
+faucc_CFLAGS=-b i286 --freestanding -D$(TARGET)
+faucc_LDFLAGS=-b i286 -nostdlib -T $(LDSCRIPT)
 # gcc switches..
-#CC=gcc
-#CFLAGS=-save-temps -Os -m16 -march=i386 -ffreestanding -Wall -Werror -D$(TARGET)
-#LDFLAGS=-save-temps -m16 -march=i386 -nostdlib -Wl,--nmagic,--script=$(LDSCRIPT)
+gcc_CFLAGS=-Os -m16 -march=i386 -ffreestanding -D$(TARGET)
+gcc_LDFLAGS=-m16 -march=i386 -nostdlib -Wl,--nmagic,--script=$(LDSCRIPT)
+CFLAGS=$($(CC)_CFLAGS)
+LDFLAGS=$($(CC)_LDFLAGS)
 
 all: boot.bin rom.fix
 
 clean:
 	rm -f *.bin *.fix *.o *.i *.s fix_csum
 
-test: all
+testboot: boot.bin
 	qemu-system-i386 -drive file=boot.bin,format=raw,if=floppy,readonly -boot a -net none
 
-testrom: all
+testrom: rom.fix
 	qemu-system-i386 -option-rom rom.fix -net none
 
 rom.fix: rom.bin fix_csum
