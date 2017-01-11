@@ -5,16 +5,16 @@ SECTIONS
 	.text : AT(0x7C00)
 	{
 		_text = .;
-		*(.text);
+		*(.text*);
 	}
 	.data :
 	{
-		_data = .;
-		*(.data);
 		_rodata = .;
 		*(.rodata*);
+		_data = .;
+		*(.data*);
 		_bss = .;
-		*(.bss);
+		*(.bss*);
 		_end = .;
 	}
 	.sig : AT(0x7DFE)

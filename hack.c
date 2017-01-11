@@ -7,7 +7,8 @@
 	#define ID "Errr...\n"
 #endif
 
-/* start of option ROM jump to main, must be in a function for faucc to emit in .text segment.. :( */
+/* start of boot sector OR option ROM: jump to main,
+   NB: must be in a function for faucc to emit in .text segment.. :( */
 static void __attribute__((naked)) _start(void) {
 	__asm__ volatile (
 		"jmp main\n"
@@ -18,6 +19,7 @@ static void __attribute__((naked)) _start(void) {
 static unsigned short videoInit(unsigned short v) {
 	unsigned short cs=0;
 	// set ES to video buffer, clear screen to specified value
+	// set DS to CS, return value
 	__asm__ volatile (
 		"mov $0xB800, %%ax\n"
 		"mov %%ax, %%es\n"
@@ -25,8 +27,9 @@ static unsigned short videoInit(unsigned short v) {
 		"xor %%di, %%di\n"
 		"mov %1, %%ax\n"
 		"rep stosw\n"
-		"push %%cs\n"
-		"pop %0\n"
+		"mov %%cs, %%ax\n"
+		"mov %%ax, %%ds\n"
+		"mov %%ax, %0\n"
 		: "=r"(cs)
 		: "m"(v)
 		: "ax","cx","di"
@@ -38,10 +41,11 @@ static void videoChar(const unsigned short p, const unsigned short c) {
 	__asm__ volatile (
 		"mov %0, %%bx\n"
 		"imul $2, %%bx\n"
-		"mov %1, %%es:(%%bx)\n"
+		"mov %1, %%ax\n"
+		"mov %%ax, %%es:(%%bx)\n"
 		: // no outputs
-		: "r"(p), "r"(c)
-		: "bx"
+		: "m"(p), "m"(c)
+		: "ax","bx"
 	);
 }
 
@@ -67,14 +71,13 @@ static unsigned short print(unsigned short p, const char *s) {
 }
 
 /* hex dump */
+static char *_hlkup = "0123456789ABCDEF";
 static unsigned short hex(unsigned short p, unsigned short val) {
-	char hex[6], o='0', s=12;
-	char c=0;
-	do {
-		hex[c] = ((val>>s) & 0xF)+o;
-		if (hex[c]>'9') hex[c]+=('A'-'0'-10);
-		s-=4;
-	} while (++c<4);
+	char hex[6], c=4;
+	while (c-->0) {
+		hex[c] = _hlkup[val & 0xF];
+		val >>= 4;
+	}
 	hex[4] = '\n';
 	hex[5] = 0;
 	return print(p, hex);
@@ -90,9 +93,10 @@ void main() {
 	unsigned short pos = 0;
 	unsigned short cs = videoInit(0x3521);
 	pos=print(pos, ID);
-	pos=hex(pos, cs);
-	pos=hex(pos, (unsigned short)&_text);
-	pos=hex(pos, (unsigned short)&_rodata);
-	pos=hex(pos, (unsigned short)&_end);
+	pos=hex(print(pos, "CS:"), cs);
+	pos=hex(print(pos, "TX:"), (unsigned short)&_text);
+//	pos=hex(print(pos, "RO:"), (unsigned short)&_rodata);
+//	pos=hex(print(pos, "DA:"), (unsigned short)&_data);
+	pos=hex(print(pos, "EN:"), (unsigned short)&_end);
 	while(1);
 }
